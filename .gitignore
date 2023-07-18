@@ -1,0 +1,28 @@
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Environment
+venv/
+
+__pycache__/
+
+.env
+
+# Docker files
+data/
+
+# Celerry stuff
+celerybeat.pid
+celerybeat-schedule

@@ -1,0 +1,69 @@
+version: '3.5'
+
+services:
+  core:
+    container_name: core
+    build: .
+    stdin_open: true
+    tty: true
+    restart: on-failure
+    ports:
+      - 127.0.0.1:8000:8000
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+      - .:/core
+      - ./data/files:/data/files
+  mongo:
+    container_name: mongo
+    image: mongo
+    restart: always
+    ports:
+      - 127.0.0.1:27017:27017
+    volumes:
+      - ./data/db:/data/db
+  redis:
+    container_name: redis
+    image: redis:7.0.5
+    ports:
+      - 127.0.0.1:6379:6379
+  celery_worker:
+    container_name: celery_worker
+    build: .
+    command: pipenv run celery -A core.celery_app.app -P celery_pool_asyncio:TaskPool worker --loglevel=info
+    ports:
+      - 127.0.0.1:8001:8000
+    volumes:
+      - .:/core
+    env_file:
+      - .env
+    depends_on:
+      - core
+      - redis
+      - mongo
+  celery_beat:
+    container_name: celery_beat
+    build: .
+    command: pipenv run celery beat -A core.celery_app.app --scheduler=core.scheduler:RedBeatScheduler --loglevel=debug
+    ports:
+      - 127.0.0.1:8002:8000
+    volumes:
+      - .:/core
+      - ./redis_data:/data/redis_db
+    depends_on:
+      - redis
+    restart: always
+  flower:
+    container_name: flower
+    build: .
+    command: pipenv run celery --app=core.celery_app.app flower --port=5555
+    ports:
+      - 127.0.0.1:5555:5555
+      - 127.0.0.1:8003:8000
+    env_file:
+      - .env
+    depends_on:
+      - core
+      - redis
+      - celery_worker
